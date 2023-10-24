@@ -1,26 +1,23 @@
-import { getLookupFn } from "@polkadot-api/substrate-codegen";
+import {
+  getLookupFn,
+  getDynamicBuilder,
+} from "@polkadot-api/substrate-codegen";
+import { metadata } from "./metadata";
+import { Hex, Struct, u8 } from "@polkadot-api/substrate-bindings";
+import { stringRecordMap } from "./helpers";
 
-import { Hex, metadata, Struct, u8 } from "@polkadot-api/substrate-bindings";
-
-import rawMeta from "./polkadot-metadata";
-
-const getV14 = (rawMeta: string) => {
-  const decodedMeta = metadata.dec(rawMeta);
-  if (decodedMeta.metadata.tag !== "v14") throw null;
-  return decodedMeta.metadata.value;
-};
-
-const v14 = getV14(rawMeta);
-const getType = getLookupFn(v14.lookup);
+const getType = getLookupFn(metadata.lookup);
 
 const genericCallDecoder = Struct({
   module: u8,
   method: u8,
-  args: Hex(Infinity),
+  inputData: Hex(Infinity),
 }).dec;
 
-function decode({ module, method }: CallData) {
-  const pallet = v14.pallets.find((p) => p.index === module);
+const dynamicBuilder = getDynamicBuilder(metadata);
+
+function decode({ module, method, inputData }: CallData) {
+  const pallet = metadata.pallets.find((p) => p.index === module);
   if (!pallet) throw new Error(`No pallet with index ${module}`);
 
   const palletCalls = getType(pallet.calls as number);
@@ -28,20 +25,31 @@ function decode({ module, method }: CallData) {
   // is `calls` not always an enum in the metadata?
   if (palletCalls.type !== "enum") throw null;
 
-  const [methodName, methodData] = Object.entries(palletCalls.value).find(
-    ([, methodData]) => {
-      return methodData.idx === method;
+  const [methodName, args] = Object.entries(palletCalls.value).find(
+    ([, args]) => {
+      return args.idx === method;
     }
   )!;
 
-  console.log(methodData);
+  if (args.type !== "struct" && args.type !== "primitive") throw null;
+
+  const argsCodec =
+    args.type === "primitive"
+      ? Struct({})
+      : Struct(
+          stringRecordMap(args.value, (value) =>
+            dynamicBuilder.buildDefinition(value.id)
+          )
+        );
+
   return {
-    methodName: methodName,
+    args,
+    inputData: argsCodec.dec(inputData) as Record<string, unknown>,
+    methodName,
     palletName: pallet?.name ?? "",
-    args: methodData,
   };
 }
 
 export type CallData = ReturnType<typeof genericCallDecoder>;
 
-export { v14 as metadata, genericCallDecoder, getType, decode };
+export { genericCallDecoder, getType, decode };
