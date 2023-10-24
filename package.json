@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@polkadot-api/substrate-bindings": "0.0.1-6b090acd3321b98b6306434088c5eba4a2e29edd.1.0",
+    "@polkadot-api/substrate-codegen": "0.0.1-6b090acd3321b98b6306434088c5eba4a2e29edd.1.0",
+    "@polkadot-api/utils": "0.0.1-6b090acd3321b98b6306434088c5eba4a2e29edd.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
