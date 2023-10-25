@@ -11,7 +11,7 @@ export function Output({ callData }: Props) {
     <div className="output">
       <span>{`${palletName}:${methodName}`}</span>
       {Object.keys(inputData).map((paramName) => {
-        return <div>{paramName}</div>;
+        return <div key={paramName}>{paramName}</div>;
       })}
     </div>
   );

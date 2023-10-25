@@ -28,9 +28,11 @@ function App() {
           onChange={(e) => {
             const value = e.target.value;
             setHex(value);
-            const bytes = fromHex(value);
-            const decoded = genericCallDecoder(bytes);
-            setCallData(decoded);
+            if (value) {
+              const bytes = fromHex(value);
+              const decoded = genericCallDecoder(bytes);
+              setCallData(decoded);
+            }
           }}
         ></textarea>
       </form>
